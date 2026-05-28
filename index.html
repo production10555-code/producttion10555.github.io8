@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบสแกนคิวอาร์โค้ดผสมสูตร - Production Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakrapetch:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Chakrapetch', sans-serif; }
+    .scanner-laser { animation: scanAnimation 2s infinite linear; }
+    @keyframes scanAnimation { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+    .admin-gold-transition { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .shockwave-effect {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+      width: 10px; height: 10px; background: rgba(250, 204, 21, 0.4); border-radius: 50%;
+      pointer-events: none; z-index: 9999;
+    }
+    .shockwave-effect.active { animation: shockwaveAnim 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; }
+    @keyframes shockwaveAnim { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(150); opacity: 0; border: 1px solid rgba(250, 204, 21, 0.8); } }
+  </style>
+</head>
+<body id="main-body" class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden admin-gold-transition">
+ 
+  <div id="gold-shockwave" class="shockwave-effect"></div>
+
+  <div class="relative w-full max-w-md mx-auto flex-1 flex flex-col">
+    <div id="bg-glow-1" class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl admin-gold-transition"></div>
+    <div id="bg-glow-2" class="absolute top-1/2 -right-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl admin-gold-transition"></div>
+
+    <header id="main-header" class="py-4 px-6 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-md sticky top-0 z-50 admin-gold-transition">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div id="brand-logo-box" class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 text-white admin-gold-transition">
+            <i class="fa-solid fa-flask-vial text-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-bold tracking-tight">MIXING SCAN QR-CODE</h1>
+            <p id="brand-sub-text" class="text-[10px] text-slate-400 font-medium font-mono admin-gold-transition">Scan Your Qr-code</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <div id="nav-badge" class="flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 admin-gold-transition">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            ONLINE
+          </div>
+          <button onclick="toggleSidebar()" class="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center hover:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-bars text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="admin-active-banner" class="hidden mt-3 bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-2 flex items-center justify-between text-[11px] text-yellow-400">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-user-shield animate-bounce"></i>
+          <span><strong>โหมดผู้จัดการ:</strong> สิทธิ์การเข้าถึงระดับสูงเปิดอยู่</span>
+        </div>
+        <button onclick="logoutAdmin()" class="bg-yellow-400 text-stone-950 font-bold px-2 py-0.5 rounded hover:bg-yellow-300">ออก</button>
+      </div>
+
+      <div class="mt-4">
+        <div id="nav-tabs-box" class="bg-slate-800/60 p-1 rounded-xl flex border border-slate-700/50 admin-gold-transition">
+          <button id="btn-nav-scan" onclick="navigateTo('scan-page')" class="flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-lg admin-gold-transition">
+            <i class="fa-solid fa-qrcode"></i>หน้าสแกน
+          </button>
+          <button id="btn-nav-detail" onclick="navigateTo('detail-page')" class="flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 admin-gold-transition">
+            <i class="fa-solid fa-circle-info"></i>ข้อมูลส่วนผสม
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-5 z-10 space-y-5">
+      
+      <div id="scan-page" class="space-y-4">
+        <div id="operator-card" class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60 shadow-xl space-y-3 admin-gold-transition">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1.5">
+              <label id="label-operator" class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5 admin-gold-transition">
+                <i class="fa-solid fa-user-gear"></i>ผู้สแกน (Operator)
+              </label>
+              <input type="text" id="operator-input" placeholder="ระบุชื่อพนักงาน" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 transition-colors">
+            </div>
+            <div class="space-y-1.5">
+              <label id="label-batch" class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5 admin-gold-transition">
+                <i class="fa-solid fa-layer-group"></i>หมายเลข Batch
+              </label>
+              <input type="text" id="batch-input" placeholder="ระบุหมายเลข Batch" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-indigo-500 transition-colors">
+            </div>
+          </div>
+          
+          <button id="lock-btn" onclick="toggleInputLock()" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-lock-open"></i>ยืนยันและล็อกข้อมูลเพื่อเริ่มสแกน
+          </button>
+        </div>
+
+        <div id="scanner-main-card" class="bg-slate-800/40 backdrop-blur-xl border border-slate-700/40 rounded-3xl p-5 shadow-2xl flex flex-col gap-5 admin-gold-transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span id="scan-status-indicator" class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+              <h2 id="scanner-title" class="text-base font-bold text-slate-100 admin-gold-transition">เครื่องกล้องสแกนคิวอาร์</h2>
+            </div>
+            
+            <div id="method-tabs-box" class="bg-slate-800/30 p-1 rounded-xl flex border border-slate-800/60 text-[11px] admin-gold-transition">
+              <button id="tab-live" onclick="switchScanMethod('live')" class="px-3 py-1 font-medium rounded-md bg-slate-700 text-white transition-all admin-gold-transition">กล้องสด</button>
+              <button id="tab-upload" onclick="switchScanMethod('upload')" class="px-3 py-1 font-medium rounded-md text-slate-400 transition-all admin-gold-transition">อัปโหลดภาพ</button>
+            </div>
+          </div>
+
+          <div id="live-scanner-container" class="relative w-full aspect-square bg-slate-950/80 border border-slate-800 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center justify-center group">
+            <div id="reader" class="w-full h-full object-cover"></div>
+            
+            <div id="scanner-lock-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20 transition-opacity duration-300">
+              <div class="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-3 animate-bounce">
+                <i class="fa-solid fa-user-shield text-lg"></i>
+              </div>
+              <p class="text-xs font-bold text-slate-200">ระบบกล้องถูกล็อกชั่วคราว</p>
+              <p class="text-[11px] text-slate-400 max-w-[240px] mt-1">กรุณากรอกชื่อผู้สแกนและหมายเลข Batch ด้านบนให้ครบถ้วน แล้วกดปุ่มล็อกข้อมูลเพื่อเปิดใช้งานกล้อง</p>
+            </div>
+
+            <div id="scanner-laser-line" class="absolute left-0 w-full h-[3px] bg-indigo-500 shadow-[0_0_15px_#6366f1] scanner-laser pointer-events-none admin-gold-transition"></div>
+            
+            <div id="camera-controls-pad" class="absolute bottom-4 right-4 flex gap-2 z-30 opacity-100 flex-row">
+              <button onclick="cycleCameras()" title="สลับสิทธิ์เลนส์กล้องตัวถัดไป" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-600 flex items-center justify-center hover:bg-slate-800 text-yellow-400 font-bold shadow-2xl active:scale-90 transition-transform">
+                <i class="fa-solid fa-camera-rotate text-sm"></i>
+              </button>
+              <button onclick="restartCameraForce()" title="ล้างเซสชันกล้องทั้งหมด" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-600 flex items-center justify-center hover:bg-slate-800 text-rose-400 shadow-2xl active:scale-90 transition-transform">
+                <i class="fa-solid fa-power-off text-sm"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="upload-scanner-container" class="hidden w-full aspect-square bg-slate-950/40 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center p-6 text-center relative group hover:border-indigo-500/50 transition-colors">
+            <input type="file" id="file-input" accept="image/*" onchange="handleFileScan(this)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+            <div class="w-14 h-14 rounded-full bg-indigo-500/5 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-3 group-hover:bg-indigo-500/10 transition-colors">
+              <i id="icon-upload" class="fa-solid fa-cloud-arrow-up text-2xl text-indigo-400 group-hover:scale-110 transition-transform admin-gold-transition"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-200">เลือกรูปภาพคิวอาร์โค้ด</p>
+            <p class="text-[10px] text-slate-500 mt-1">รองรับไฟล์รูปถ่าย PNG, JPG หรือคัดลอกจากคลังภาพ</p>
+          </div>
+
+          <div id="result-box" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex gap-3">
+            <div class="text-emerald-400 mt-0.5"><i class="fa-solid fa-circle-check text-base"></i></div>
+            <div class="space-y-1 flex-1">
+              <p class="text-xs font-bold text-emerald-400">ถอดรหัสสำเร็จ</p>
+              <p id="result-message" class="text-xs text-slate-200 font-mono break-all"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="mini-history-btn" onclick="navigateTo('history-page')" class="bg-slate-800/40 hover:bg-slate-800/70 active:scale-[0.99] cursor-pointer rounded-2xl p-3 border border-slate-800/80 text-xs transition-all duration-200 shadow-md flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i id="icon-mini-history" class="fa-solid fa-clock-rotate-left text-indigo-400 admin-gold-transition"></i>
+            <span class="font-medium">ดูประวัติข้อมูลการสแกนคิวอาร์ล่าสุด</span>
+          </div>
+          <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+        </div>
+      </div>
+
+      <div id="detail-page" class="hidden space-y-4">
+        <div id="detail-main-card" class="bg-slate-800/40 backdrop-blur-xl border border-slate-700/40 rounded-3xl p-5 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 id="detail-title-text" class="text-base font-bold text-white flex items-center gap-2 admin-gold-transition">
+              <i id="icon-detail-title" class="fa-solid fa-file-invoice text-indigo-400 admin-gold-transition"></i>รายละเอียดวัตถุดิบสาร
+            </h2>
+            <span id="detail-status-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">ไม่มีข้อมูล</span>
+          </div>
+          <div id="details-container" class="space-y-3">
+            <div class="text-center py-8 text-slate-500 text-xs">
+              <i class="fa-solid fa-box-open text-2xl mb-2 block opacity-30"></i>ยังไม่มีการสแกนข้อมูลส่วนผสมเข้ามาในระบบ
+            </div>
+          </div>
+          <button id="btn-back-to-scan" onclick="navigateTo('scan-page')" class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 admin-gold-transition">
+            <i class="fa-solid fa-arrow-left"></i>กลับสู่หน้าหลักสแกนเนอร์
+          </button>
+        </div>
+      </div>
+
+      <div id="history-page" class="hidden space-y-4">
+        <div id="history-main-card" class="bg-slate-800/40 backdrop-blur-xl border border-slate-700/40 rounded-3xl p-5 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="space-y-0.5">
+              <button id="btn-history-back" onclick="navigateTo('scan-page')" class="text-xs text-indigo-400 font-semibold hover:underline flex items-center gap-1 admin-gold-transition">
+                <i class="fa-solid fa-arrow-left text-[10px]"></i>ย้อนกลับ
+              </button>
+              <h2 id="history-title-text" class="text-base font-bold text-white flex items-center gap-2 admin-gold-transition">
+                <i id="icon-history-title" class="fa-solid fa-list-check text-indigo-400 admin-gold-transition"></i>บันทึกการทำงานของพนักงาน
+              </h2>
+            </div>
+          </div>
+          
+          <div id="calendar-card" class="bg-gradient-to-b from-slate-800/90 to-slate-900/90 p-4 rounded-2xl border border-slate-700/60 shadow-xl space-y-3 admin-gold-transition">
+            <div>
+              <label id="label-calendar" class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider block admin-gold-transition">เลือกวันที่กรองข้อมูลประวัติ</label>
+              <input type="date" id="history-date-filter" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+            </div>
+          </div>
+
+          <div id="admin-bulk-panel" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-center justify-between text-xs admin-gold-transition">
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1.5 font-semibold text-amber-400 cursor-pointer select-none">
+                <input type="checkbox" id="bulk-select-all" onchange="toggleSelectAllLogs(this)" class="w-3.5 h-3.5 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0">
+                เลือกทั้งหมด
+              </label>
+            </div>
+            <button onclick="deleteSelectedLogEntries()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg flex items-center gap-1.5 shadow-md active:scale-95 transition-transform">
+              <i class="fa-solid fa-dumpster-fire"></i> ลบรายการที่เลือกถาวร
+            </button>
+          </div>
+
+          <div id="history-list-container" class="space-y-3 max-h-[440px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <div id="chart-page" class="hidden space-y-4">
+        <div id="chart-main-card" class="bg-slate-800/40 backdrop-blur-xl border border-slate-700/40 rounded-3xl p-5 shadow-2xl space-y-5">
+          <div class="flex items-center justify-between">
+            <div class="space-y-0.5">
+              <button id="btn-chart-back" onclick="navigateTo('scan-page')" class="text-xs text-indigo-400 font-semibold hover:underline flex items-center gap-1 admin-gold-transition">
+                <i class="fa-solid fa-arrow-left text-[10px]"></i>ย้อนกลับ
+              </button>
+              <h2 id="chart-title-text" class="text-base font-bold text-white flex items-center gap-2 admin-gold-transition">
+                <i id="icon-chart-title" class="fa-solid fa-chart-bar text-indigo-400 admin-gold-transition"></i>สถิติกำลังการผลิตรวม
+              </h2>
+            </div>
+          </div>
+          <div id="chart-calendar-card" class="bg-gradient-to-b from-slate-800/90 to-slate-900/90 p-4 rounded-2xl border border-slate-700/60 shadow-xl space-y-3 admin-gold-transition">
+            <div>
+              <label id="label-chart-calendar" class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider block admin-gold-transition">เลือกสัปดาห์เพื่อแสดงแผนภูมิ</label>
+              <input type="month" id="chart-date-filter" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+            </div>
+          </div>
+          <div id="chart-render-container" class="space-y-3">
+            <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 text-center text-xs text-slate-500">
+              <i class="fa-solid fa-chart-pie text-3xl mb-2 block opacity-20"></i>โมดูลวิเคราะห์กราฟกำลังประมวลผลข้อมูล...
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-950/60 opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
+    <div id="sidebar" class="fixed top-0 left-0 w-64 h-full bg-slate-900 border-r border-slate-800/80 p-5 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col justify-between">
+      <div class="space-y-6">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">ระบบการควบคุม</span>
+          <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <nav class="space-y-1.5">
+          <button onclick="selectMenu('scan')" class="w-full text-left py-2.5 px-3 rounded-xl text-xs font-medium hover:bg-slate-800 flex items-center gap-3 text-slate-200 transition-colors">
+            <i class="fa-solid fa-qrcode w-4 text-center text-indigo-400"></i>หน้าหลักเครื่องสแกน
+          </button>
+          <button onclick="selectMenu('history')" class="w-full text-left py-2.5 px-3 rounded-xl text-xs font-medium hover:bg-slate-800 flex items-center gap-3 text-slate-200 transition-colors">
+            <i class="fa-solid fa-list-check w-4 text-center text-emerald-400"></i>ประวัติบันทึกข้อมูล
+          </button>
+          <button onclick="selectMenu('chart')" class="w-full text-left py-2.5 px-3 rounded-xl text-xs font-medium hover:bg-slate-800 flex items-center gap-3 text-slate-200 transition-colors">
+            <i class="fa-solid fa-chart-pie w-4 text-center text-amber-400"></i>แดชบอร์ดวิเคราะห์ยอด
+          </button>
+        </nav>
+      </div>
+      <div class="pt-4 border-t border-slate-800">
+        <button id="btn-admin-mode-toggle" onclick="triggerAdminModal()" class="w-full py-3 px-4 rounded-xl flex items-center justify-between text-sm font-semibold text-amber-400 hover:bg-amber-500/10 transition-all">
+          <span id="admin-status-text">ระบบผู้จัดการ (Admin)</span>
+          <i id="admin-lock-icon" class="fa-solid fa-lock text-xs opacity-60"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300 z-50">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-xs transform scale-95 transition-transform duration-300 space-y-4 shadow-2xl">
+        <div class="text-center space-y-1">
+          <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto mb-2 border border-amber-500/20">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white">กรุณาระบุรหัสผ่านแอดมิน</h3>
+          <p class="text-[10px] text-slate-400">ระบบจะทำการปลดล็อกฟังก์ชันและเปิดธีมสีทอง</p>
+        </div>
+        <div class="space-y-1.5">
+          <input type="password" id="admin-password-input" placeholder="ใส่รหัสผ่านแอดมิน" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center text-xs font-mono text-white focus:outline-none focus:border-amber-500">
+          <p id="admin-error-msg" class="hidden text-[10px] text-rose-500 font-medium text-center"><i class="fa-solid fa-circle-exclamation mr-1"></i>รหัสผ่านแอดมินไม่ถูกต้อง</p>
+        </div>
+        <div class="flex gap-2 text-xs">
+          <button onclick="closeAdminModal()" class="flex-1 py-2 bg-slate-800 text-slate-300 font-semibold rounded-xl hover:bg-slate-700 transition-colors">ยกเลิก</button>
+          <button onclick="verifyAdminPassword()" class="flex-1 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-bold rounded-xl hover:from-amber-400 hover:to-yellow-400 transition-all shadow-lg">ยืนยันรหัส</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="py-4 text-center text-[10px] text-slate-500 font-mono tracking-wider">
+      DIGITAL FACTORY PLATFORM © 2026 ALL RIGHTS RESERVED
+    </footer>
+  </div>
+
+  <script>
+    let currentOperator = "";
+    let currentBatch = "";
+    let isInputLocked = false;
+    let scanMethod = "live"; 
+    let html5Qrcode = null;
+    let isScannerRunning = false;
+    let isAdminLoggedIn = false;
+    
+    let availableCameras = [];
+    let currentCameraIndex = 0;
+    
+    let globalLogsCache = [];
+
+    function toggleInputLock() {
+      const opInput = document.getElementById("operator-input");
+      const btInput = document.getElementById("batch-input");
+      const lockBtn = document.getElementById("lock-btn");
+
+      if (!isInputLocked) {
+        currentOperator = opInput.value.trim();
+        currentBatch = btInput.value.trim();
+
+        if (currentOperator.length === 0 || currentBatch.length === 0) {
+          alert("กรุณากรอกข้อมูลพนักงานและเลข Batch ให้ครบถ้วนก่อน!");
+          playTone(220, 0.3);
+          return;
+        }
+
+        opInput.readOnly = true;
+        btInput.readOnly = true;
+        opInput.classList.add("opacity-50", "bg-slate-950");
+        btInput.classList.add("opacity-50", "bg-slate-950");
+
+        isInputLocked = true;
+        lockBtn.innerHTML = `<i class="fa-solid fa-lock"></i> ปลดล็อกข้อมูลฟอร์มระบบ`;
+        lockBtn.className = "w-full py-2.5 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2";
+        
+        playTone(493.88, 0.1);
+        checkInputLockStatus();
+      } else {
+        stopLiveScanner();
+
+        opInput.readOnly = false;
+        btInput.readOnly = false;
+        opInput.classList.remove("opacity-50", "bg-slate-950");
+        btInput.classList.remove("opacity-50", "bg-slate-950");
+
+        isInputLocked = false;
+        lockBtn.innerHTML = `<i class="fa-solid fa-lock-open"></i> ยืนยันและล็อกข้อมูลเพื่อเริ่มสแกน`;
+        if (isAdminLoggedIn) {
+          lockBtn.className = "w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-stone-950 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2";
+        } else {
+          lockBtn.className = "w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2";
+        }
+        
+        playTone(329.63, 0.15);
+        checkInputLockStatus();
+      }
+    }
+
+    function checkInputLockStatus() {
+      const overlay = document.getElementById("scanner-lock-overlay");
+      const indicator = document.getElementById("scan-status-indicator");
+
+      if (isInputLocked && scanMethod === "live") {
+        overlay.classList.add("opacity-0", "pointer-events-none");
+        indicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+        startLiveScanner();
+      } else {
+        overlay.classList.remove("opacity-0", "pointer-events-none");
+        indicator.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse";
+        stopLiveScanner();
+      }
+    }
+
+    function startLiveScanner() {
+      if (html5Qrcode) { 
+        try { 
+          html5Qrcode.clear(); 
+          document.getElementById("reader").innerHTML = "";
+        } catch(e){} 
+      }
+      
+      html5Qrcode = new Html5Qrcode("reader");
+
+      const scanConfig = {
+        fps: 15,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          return { width: Math.floor(minEdge * 0.7), height: Math.floor(minEdge * 0.7) };
+        }
+      };
+
+      Html5Qrcode.getCameras().then(cameras => {
+        availableCameras = cameras;
+        
+        if (availableCameras && availableCameras.length > 0) {
+          let backCamIndex = -1;
+          for (let i = 0; i < availableCameras.length; i++) {
+            let label = availableCameras[i].label.toLowerCase();
+            if (label.indexOf("back") !== -1 || label.indexOf("rear") !== -1 || label.indexOf("environment") !== -1) {
+              backCamIndex = i;
+              break;
+            }
+          }
+
+          if (backCamIndex !== -1) {
+            currentCameraIndex = backCamIndex;
+          } else {
+            currentCameraIndex = availableCameras.length - 1;
+          }
+
+          html5Qrcode.start(
+            availableCameras[currentCameraIndex].id,
+            scanConfig,
+            onScanSuccess,
+            onScanFailure
+          ).then(() => {
+            isScannerRunning = true;
+          }).catch(err => {
+            console.warn("การเปิดด้วย ID ถูกปฏิเสธ, กำลังสลับไปโหมดแวดล้อมพื้นฐาน...", err);
+            fallbackToEnvironmentMode(scanConfig);
+          });
+
+        } else {
+          fallbackToEnvironmentMode(scanConfig);
+        }
+      }).catch(err => {
+        console.warn("ไม่สามารถเรียกขอรายชื่อกล้องได้, กำลังใช้โหมดพื้นฐาน...", err);
+        fallbackToEnvironmentMode(scanConfig);
+      });
+    }
+
+    function fallbackToEnvironmentMode(config) {
+      html5Qrcode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        onScanFailure
+      ).then(() => {
+        isScannerRunning = true;
+      }).catch(err => {
+        console.error("กล้องถูกบล็อกโดยสิ้นเชิง:", err);
+        alert("ไม่สามารถเข้าถึงกล้องถ่ายภาพได้");
+      });
+    }
+
+    function onScanSuccess(qrCodeMessage) {
+      playTone(600, 0.1);
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            document.getElementById("result-box").classList.remove("hidden");
+            document.getElementById("result-box").className = "bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex gap-3";
+            document.getElementById("result-message").innerText = response.message;
+            
+            const detailBadge = document.getElementById("detail-status-badge");
+            if(detailBadge) {
+              detailBadge.innerText = "บันทึกสำเร็จ";
+              detailBadge.className = "text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400";
+            }
+            
+            const targetLimit = response.rowData && response.rowData[4] ? response.rowData[4] : "-";
+            document.getElementById("details-container").innerHTML = `<div class="bg-slate-950/50 p-4 rounded-xl border border-slate-800 text-xs space-y-1">
+              <p><span class="text-slate-400">วัน-เวลา:</span> <span class="font-mono text-slate-300">${new Date().toLocaleString('th-TH')}</span></p>
+              <p><span class="text-slate-400">ชื่อสาร:</span> <span class="text-emerald-400 font-bold">${response.rowData[1] || "-"}</span></p>
+              <p><span class="text-slate-400">QR-name:</span> ${qrCodeMessage}</p>
+              <p><span class="text-slate-400">ผู้สแกน:</span> ${currentOperator}</p>
+              <p><span class="text-slate-400">BATCH:</span> BATCH ที่ ${currentBatch}</p>
+              <p><span class="text-slate-400">จำนวนสแกนล่าสุด:</span> ${response.serverScannedCount}/${targetLimit}</p>
+            </div>`;
+            
+            fetchAndReloadLogsData();
+          } else {
+            document.getElementById("result-box").classList.remove("hidden");
+            document.getElementById("result-box").className = "bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 flex gap-3";
+            document.getElementById("result-message").innerText = response.message;
+            playTone(220, 0.4);
+            fetchAndReloadLogsData();
+          }
+        })
+        .withFailureHandler(function(err) {
+          alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: " + err);
+        })
+        .updateAndFetchDetails(qrCodeMessage, currentOperator, currentBatch);
+    }
+
+    function onScanFailure(errorMessage) {}
+
+    function cycleCameras() {
+      if (!isInputLocked || availableCameras.length <= 1) return;
+      currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+      restartCameraForce();
+    }
+
+    function restartCameraForce() {
+      if (html5Qrcode) {
+        html5Qrcode.stop().then(() => {
+          isScannerRunning = false;
+          document.getElementById("reader").innerHTML = "";
+          setTimeout(() => { startLiveScanner(); }, 350);
+        }).catch(() => {
+          isScannerRunning = false;
+          startLiveScanner();
+        });
+      } else {
+        startLiveScanner();
+      }
+    }
+
+    function stopLiveScanner() {
+      if (html5Qrcode && isScannerRunning) {
+        html5Qrcode.stop().then(() => {
+          html5Qrcode.clear();
+          isScannerRunning = false;
+          document.getElementById("reader").innerHTML = "";
+        }).catch(err => {
+          console.error(err);
+        });
+      }
+    }
+
+    function handleFileScan(input) {
+      if (!input.files || input.files.length === 0) return;
+      if (!isInputLocked) {
+        alert("กรุณากรอกข้อมูลและกดปุ่มล็อกข้อมูลก่อนทำการอัปโหลดสแกนภาพ!");
+        input.value = "";
+        return;
+      }
+      
+      const file = input.files[0];
+      const html5QrCodeFile = new Html5Qrcode("reader");
+      html5QrCodeFile.scanFile(file, true)
+        .then(qrCodeMessage => {
+          onScanSuccess(qrCodeMessage);
+          input.value = ""; 
+        })
+        .catch(err => { 
+          alert("ไม่พบรหัส QR Code ในรูปภาพนี้ หรือรูปภาพไม่ชัดเจน กรุณาลองใหม่อีกครั้ง"); 
+          input.value = "";
+        });
+    }
+
+    function fetchAndReloadLogsData() {
+      const selectAllBox = document.getElementById("bulk-select-all");
+      if(selectAllBox) selectAllBox.checked = false;
+
+      if(window.google && google.script && google.script.run.getLogsData) {
+        google.script.run
+          .withSuccessHandler(function(logs) {
+            globalLogsCache = logs;
+            renderHistoryTable();
+            renderAnalyticsChart();
+          })
+          .getLogsData();
+      } else {
+        renderHistoryTable();
+        renderAnalyticsChart();
+      }
+    }
+
+    function renderHistoryTable() {
+      const container = document.getElementById("history-list-container");
+      if (!container) return;
+      
+      const filterDate = document.getElementById("history-date-filter").value;
+      const bulkPanel = document.getElementById("admin-bulk-panel");
+      
+      if (isAdminLoggedIn && globalLogsCache.length > 0) {
+        bulkPanel.classList.remove("hidden");
+      } else {
+        bulkPanel.classList.add("hidden");
+      }
+
+      if (globalLogsCache.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">
+          <i class="fa-solid fa-folder-open text-2xl mb-2 block opacity-30"></i>ไม่พบข้อมูลประวัติบันทึกในฐานข้อมูลคลาวด์
+        </div>`;
+        return;
+      }
+      
+      const groupedBatches = {};
+      
+      for (let i = 0; i < globalLogsCache.length; i++) {
+        const item = globalLogsCache[i];
+        if (filterDate && !item.timestamp.startsWith(filterDate)) continue;
+        
+        const groupKey = `${item.dateGroup} ||| ${item.batch}`;
+        if (!groupedBatches[groupKey]) {
+          groupedBatches[groupKey] = [];
+        }
+        groupedBatches[groupKey].push({ ...item, originalIndex: i });
+      }
+      
+      const groupKeys = Object.keys(groupedBatches).sort().reverse();
+      
+      if (groupKeys.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">
+          <i class="fa-solid fa-filter text-2xl mb-2 block opacity-30"></i>ไม่พบข้อมูลสถิติประวัติในวันที่เลือก
+        </div>`;
+        bulkPanel.classList.add("hidden");
+        return;
+      }
+      
+      container.innerHTML = ""; 
+      
+      groupKeys.forEach((key, gIdx) => {
+        const logRecords = groupedBatches[key];
+        const [dateStr, batchName] = key.split(' ||| ');
+
+        let earliestTimestamp = logRecords[logRecords.length - 1].timestamp;
+        let startTimeStr = "";
+        if (earliestTimestamp && earliestTimestamp.includes(" ")) {
+          startTimeStr = earliestTimestamp.split(" ")[1];
+        }
+
+        let batchSubstanceCounts = {};
+        let uniqueSubstancesInBatch = new Set();
+        let substanceTargets = {};
+
+        logRecords.forEach(rec => {
+          if (rec.substanceName) {
+            uniqueSubstancesInBatch.add(rec.substanceName);
+            
+            if (rec.targetQtyFromFormula) {
+              substanceTargets[rec.substanceName] = parseInt(rec.targetQtyFromFormula) || 0;
+            } else if (rec.bagSize && !substanceTargets[rec.substanceName]) {
+              substanceTargets[rec.substanceName] = parseInt(rec.bagSize) || 0;
+            }
+
+            if (rec.status === "บันทึกสำเร็จ") {
+              batchSubstanceCounts[rec.substanceName] = (batchSubstanceCounts[rec.substanceName] || 0) + 1;
+            }
+          }
+        });
+
+        let isAllComplete = true;   
+        let hasAnyExcess = false;    
+        let subBadgesHtml = `<div class="flex flex-wrap gap-1 mt-1.5">`;
+
+        uniqueSubstancesInBatch.forEach(subName => {
+          const targetQty = substanceTargets[subName] || 0;
+          const actualQty = batchSubstanceCounts[subName] || 0;
+          let badgeColor = "";
+          
+          if (actualQty === 0) {
+            isAllComplete = false;
+            badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/30"; 
+          } else if (targetQty > 0 && actualQty < targetQty) {
+            isAllComplete = false;
+            badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/30"; 
+          } else if (targetQty > 0 && actualQty === targetQty) {
+            badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"; 
+          } else {
+            hasAnyExcess = true;
+            badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/30"; 
+          }
+
+          subBadgesHtml += `<span class="text-[10px] px-1.5 py-0.5 rounded border ${badgeColor}">${subName} [${actualQty}/${targetQty || '-'}]</span>`;
+        });
+        subBadgesHtml += `</div>`;
+
+        let statusText = isAllComplete && !hasAnyExcess ? " (ครบตามสูตร)" : " (ยังไม่ครบ)";
+        if (hasAnyExcess) statusText += " (มีสารเกินโควตา)";
+
+        const displayTitle = `BATCH ${batchName} - ${dateStr} (${startTimeStr || "ไม่ระบุเวลา"})${statusText}`;
+        let headerStyle = isAdminLoggedIn ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-300" : "bg-indigo-950/40 border-indigo-500/20 text-indigo-300";
+        
+        const batchAccordion = document.createElement("div");
+        batchAccordion.className = "border rounded-xl overflow-hidden shadow-sm transition-all border-slate-800 bg-slate-900/60";
+        
+        const headerDiv = document.createElement("div");
+        headerDiv.className = `p-3 cursor-pointer border-b border-slate-800/40 select-none ${headerStyle} hover:bg-slate-800/40 transition-colors`;
+        headerDiv.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex items-start gap-2 pr-2 flex-1">
+              <i class="fa-solid fa-box-archive text-xs mt-0.5 flex-shrink-0"></i>
+              <div class="flex flex-col">
+                <span class="font-bold text-xs leading-relaxed break-words">${displayTitle}</span>
+                ${subBadgesHtml}
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-slate-400 flex-shrink-0 pt-0.5">
+              <span>(${logRecords.length})</span>
+              <i id="arrow-icon-${gIdx}" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+            </div>
+          </div>
+        `;
+        
+        const contentDiv = document.createElement("div");
+        contentDiv.id = `batch-content-${gIdx}`;
+        contentDiv.className = "p-2.5 space-y-2.5 hidden bg-slate-950/30";
+        
+        let summaryHtml = `<div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 text-[11px] space-y-1 text-slate-400">
+          <p class="font-bold text-slate-300 border-b border-slate-800 pb-1 mb-1"><i class="fa-solid fa-chart-line mr-1 text-indigo-400"></i>ข้อมูลรายงานตรวจสอบดิฟ (Diff Report):</p>`;
+        
+        uniqueSubstancesInBatch.forEach(subName => {
+          const target = substanceTargets[subName] || 0;
+          const actual = batchSubstanceCounts[subName] || 0;
+          let diffText = "";
+          if(actual === target) diffText = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check-double ml-1"></i> ครบ</span>`;
+          else if(actual > target) diffText = `<span class="text-rose-400 font-bold"><i class="fa-solid fa-triangle-exclamation ml-1"></i> เกิน +${actual - target}</span>`;
+          else diffText = `<span class="text-amber-400 font-medium"> ขาด -${target - actual}</span>`;
+          
+          summaryHtml += `<div class="flex justify-between"><span>• ${subName}:</span><span>ยอดสแกน ${actual}/${target || '-'} ถุง ${diffText}</span></div>`;
+        });
+        summaryHtml += `</div>`;
+        contentDiv.innerHTML = summaryHtml;
+
+        logRecords.forEach(rec => {
+          let recStatusColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+          if (rec.status.indexOf("ปฏิเสธ") !== -1 || rec.status.indexOf("⚠️") !== -1) {
+            recStatusColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+          } else if (rec.status.indexOf("รีเซ็ต") !== -1) {
+            recStatusColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+          }
+          
+          let checkboxMarkup = "";
+          let adminActionMenu = "";
+          
+          if (isAdminLoggedIn) {
+            checkboxMarkup = `<input type="checkbox" name="log-select-checkbox" value="${rec.timestamp}" data-qr="${rec.qrCode}" data-substance="${rec.substanceName}" data-batch="${rec.batch}" data-date="${rec.dateGroup}" class="w-3.5 h-3.5 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-0 mr-2 cursor-pointer">`;
+            adminActionMenu = `
+              <div class="flex justify-end gap-2 pt-2 mt-1 border-t border-slate-800/40">
+                <button onclick="event.stopPropagation(); deleteLogEntry('${rec.timestamp}', '${rec.qrCode}', '${rec.substanceName}', '${rec.batch}', '${rec.dateGroup}')" class="px-2 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold hover:bg-rose-500/30 transition-colors">
+                  <i class="fa-solid fa-trash-can mr-1"></i>ลบทิ้งถาวร
+                </button>
+              </div>
+            `;
+          }
+          
+          const currentLimit = substanceTargets[rec.substanceName] || rec.bagSize || "-";
+          const recordHtml = `
+            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800/60 text-xs space-y-1.5 shadow-inner">
+              <div class="flex justify-between items-center border-b border-slate-800/40 pb-1.5 mb-1.5">
+                <div class="flex items-center select-none">
+                  ${checkboxMarkup}
+                  <span class="font-mono text-[11px] text-slate-400"><i class="fa-regular fa-clock mr-1"></i>เวลาสแกน: ${rec.timestamp.split(' ')[1] || rec.timestamp}</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full border ${recStatusColor} font-bold">${rec.status}</span>
+              </div>
+              <div class="space-y-0.5 text-slate-300 pl-1">
+                <p><span class="text-slate-500 inline-block w-20">ชื่อสาร:</span><strong class="text-indigo-300">${rec.substanceName}</strong></p>
+                <p><span class="text-slate-500 inline-block w-20">โควตาสูตร:</span><span class="text-slate-200">${currentLimit} ถุง</span></p>
+                <p><span class="text-slate-500 inline-block w-20">ผู้สแกน:</span><span class="text-slate-200">${rec.operator}</span></p>
+                <p><span class="text-slate-500 inline-block w-20">คิวอาร์โค้ด:</span><span class="font-mono text-[11px] text-slate-400">${rec.qrCode}</span></p>
+              </div>
+              ${adminActionMenu}
+            </div>
+          `;
+          contentDiv.innerHTML += recordHtml;
+        });
+        
+        headerDiv.addEventListener("click", () => {
+          const isHidden = contentDiv.classList.contains("hidden");
+          const arrowIcon = document.getElementById(`arrow-icon-${gIdx}`);
+          if (isHidden) {
+            contentDiv.classList.remove("hidden");
+            if (arrowIcon) arrowIcon.style.transform = "rotate(180deg)";
+          } else {
+            contentDiv.classList.add("hidden");
+            if (arrowIcon) arrowIcon.style.transform = "rotate(0deg)";
+          }
+        });
+        
+        batchAccordion.appendChild(headerDiv);
+        batchAccordion.appendChild(contentDiv);
+        container.appendChild(batchAccordion);
+      });
+    }
+
+    function toggleSelectAllLogs(masterCheckbox) {
+      const checkboxes = document.getElementsByName("log-select-checkbox");
+      checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+      });
+    }
+
+    function deleteSelectedLogEntries() {
+      const checkboxes = document.getElementsByName("log-select-checkbox");
+      let selectedItems = [];
+      
+      checkboxes.forEach(cb => {
+        if (cb.checked) {
+          selectedItems.push({
+            timestamp: cb.value,
+            qrCode: cb.getAttribute("data-qr"),
+            substanceName: cb.getAttribute("data-substance"),
+            batch: cb.getAttribute("data-batch"),
+            dateGroup: cb.getAttribute("data-date")
+          });
+        }
+      });
+
+      if (selectedItems.length === 0) {
+        alert("กรุณาทำเครื่องหมายติ๊กเลือกรายการที่คุณต้องการจะลบก่อน!");
+        return;
+      }
+
+      if (confirm(`⚠️ คุณแน่ใจชัวร์ไหมที่จะทำการลบรายการประวัติสแกนจำนวน [ ${selectedItems.length} ] รายการที่เลือกนี้ออกจากระบบ Google Sheets ถาวร?`)) {
+        if (window.google && google.script && google.script.run.deleteLogFromServer) {
+          let deletePromises = selectedItems.map(item => {
+            return new Promise((resolve) => {
+              google.script.run
+                .withSuccessHandler(() => resolve(item))
+                .withFailureHandler(() => resolve(null))
+                .deleteLogFromServer(item.timestamp, item.qrCode);
+            });
+          });
+
+          Promise.all(deletePromises).then((results) => {
+            results.forEach(deletedItem => {
+              if (deletedItem) {
+                globalLogsCache = globalLogsCache.filter(log => {
+                  const isMatchRow = log.timestamp === deletedItem.timestamp && log.qrCode === deletedItem.qrCode;
+                  const isRedErrorRow = log.dateGroup === deletedItem.dateGroup && 
+                                        log.substanceName === deletedItem.substanceName && 
+                                        log.batch === deletedItem.batch && 
+                                        log.status.startsWith("ปฏิเสธ");
+                  return !isMatchRow && !isRedErrorRow;
+                });
+              }
+            });
+            alert("ระบบได้ดำเนินการลบกลุ่มข้อมูลประวัติชุดที่เลือกพร้อมล้างแจ้งเตือนตัวแดงสำเร็จ!");
+            fetchAndReloadLogsData();
+          });
+        }
+      }
+    }
+
+    function deleteLogEntry(timestamp, qrCode, substanceName, batch, dateGroup) {
+      if (confirm("⚠️ ยืนยันคำสั่งลบรายการนี้ใช่ไหม? ข้อมูลจะถูกลบออกจากตารางฐานข้อมูล Mixing_Logs อย่างถาวร!")) {
+         if(window.google && google.script && google.script.run.deleteLogFromServer) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                 globalLogsCache = globalLogsCache.filter(log => {
+                   const isTargetRow = log.timestamp === timestamp && log.qrCode === qrCode;
+                   const isRedErrorRow = log.dateGroup === dateGroup && 
+                                         log.substanceName === substanceName && 
+                                         log.batch === batch && 
+                                         log.status.startsWith("ปฏิเสธ");
+                   return !isTargetRow && !isRedErrorRow;
+                 });
+                 alert(res.message || "ลบประวัติออกจากเซิร์ฟเวอร์เรียบร้อย");
+                 fetchAndReloadLogsData();
+              })
+              .deleteLogFromServer(timestamp, qrCode);
+         }
+      }
+    }
+
+    function renderAnalyticsChart() {
+      const chartContainer = document.getElementById("chart-render-container");
+      if (!chartContainer) return;
+      
+      const filterMonth = document.getElementById("chart-date-filter").value;
+      let statsMap = {};
+      
+      globalLogsCache.forEach(item => {
+        if (item.status === "บันทึกสำเร็จ") {
+          if (filterMonth && !item.timestamp.startsWith(filterMonth)) return;
+          statsMap[item.substanceName] = (statsMap[item.substanceName] || 0) + 1;
+        }
+      });
+      
+      const keys = Object.keys(statsMap);
+      
+      if (keys.length === 0) {
+        chartContainer.innerHTML = `<div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 text-center text-xs text-slate-500">
+          <i class="fa-solid fa-chart-pie text-3xl mb-2 block opacity-20"></i>ไม่มีข้อมูลการสแกนสำเร็จเพื่อนำไปประมวลผลกราฟสถิติ
+        </div>`;
+        return;
+      }
+      
+      let chartHtml = `<div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/80 space-y-3.5">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-simple text-indigo-400 mr-1.5"></i>สัดส่วนจำนวนถุงที่สแกนแยกตามสาร</h4>`;
+      
+      keys.forEach((substance, idx) => {
+        const count = statsMap[substance];
+        const total = Object.values(statsMap).reduce((a, b) => a + b, 0);
+        const percent = Math.min(100, Math.round((count / total) * 100));
+        
+        const barColors = ["from-indigo-500 to-cyan-500", "from-emerald-500 to-teal-500", "from-amber-500 to-orange-500", "from-pink-500 to-rose-500"];
+        const currentColor = barColors[idx % barColors.length];
+        
+        chartHtml += `<div class="space-y-1">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-semibold text-slate-200">${substance}</span>
+            <span class="font-mono text-slate-400 font-bold">${count} ถุง (${percent}%)</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+            <div class="h-full bg-gradient-to-r ${currentColor} rounded-full" style="width: ${percent}%"></div>
+          </div>
+        </div>`;
+      });
+      
+      chartHtml += `</div>`;
+      chartContainer.innerHTML = chartHtml;
+    }
+
+    function navigateTo(pageId) {
+      const pages = ['scan-page', 'detail-page', 'history-page', 'chart-page'];
+      pages.forEach(p => document.getElementById(p).classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
+
+      const btnScan = document.getElementById('btn-nav-scan');
+      const btnDetail = document.getElementById('btn-nav-detail');
+      
+      if (pageId === 'scan-page') {
+        if (isAdminLoggedIn) {
+          btnScan.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-yellow-400 text-stone-950 shadow-lg admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-yellow-400/60 hover:text-yellow-400 admin-gold-transition";
+        } else {
+          btnScan.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 admin-gold-transition";
+        }
+        checkInputLockStatus();
+      } else if (pageId === 'detail-page') {
+        if (isAdminLoggedIn) {
+          btnScan.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-yellow-400/60 hover:text-yellow-400 admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-yellow-400 text-stone-950 shadow-lg admin-gold-transition";
+        } else {
+          btnScan.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg admin-gold-transition";
+        }
+        stopLiveScanner();
+      } else { stopLiveScanner(); }
+      
+      if (pageId === 'history-page' || pageId === 'chart-page') {
+        fetchAndReloadLogsData();
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+      }
+    }
+
+    function selectMenu(menuId) {
+      toggleSidebar(); 
+      if (menuId === 'scan') navigateTo('scan-page');
+      else if (menuId === 'history') navigateTo('history-page');
+      else if (menuId === 'chart') navigateTo('chart-page');
+    }
+
+    function triggerAdminModal() {
+      toggleSidebar();
+      if (isAdminLoggedIn) { logoutAdmin(); return; }
+      document.getElementById('admin-password-input').value = "";
+      document.getElementById('admin-error-msg').classList.add('hidden');
+      const modal = document.getElementById('admin-modal');
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modal.querySelector('div').classList.remove('scale-95');
+      document.getElementById('admin-password-input').focus();
+    }
+
+    function closeAdminModal() {
+      const modal = document.getElementById('admin-modal');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modal.querySelector('div').classList.add('scale-95');
+    }
+
+    function verifyAdminPassword() {
+      const pass = document.getElementById('admin-password-input').value;
+      if (pass === "pd51234") {
+        isAdminLoggedIn = true;
+        closeAdminModal();
+        const shockwave = document.getElementById('gold-shockwave');
+        shockwave.classList.add('active');
+        setTimeout(() => { shockwave.classList.remove('active'); }, 1200);
+        applyGoldenTheme(true);
+        document.getElementById('admin-active-banner').classList.remove('hidden');
+        playTone(587.33, 0.1); 
+        setTimeout(() => { playTone(880, 0.25); }, 100); 
+      } else {
+        document.getElementById('admin-error-msg').classList.remove('hidden');
+        playTone(180, 0.4); 
+      }
+    }
+
+    function logoutAdmin() {
+      isAdminLoggedIn = false;
+      applyGoldenTheme(false); 
+      document.getElementById('admin-active-banner').classList.add('hidden');
+      playTone(440, 0.2);
+    }
+
+    function applyGoldenTheme(isGold) {
+      const body = document.getElementById('main-body');
+      const bgGlow1 = document.getElementById('bg-glow-1');
+      const bgGlow2 = document.getElementById('bg-glow-2');
+      const mainHeader = document.getElementById('main-header');
+      const brandLogoBox = document.getElementById('brand-logo-box');
+      const brandSubText = document.getElementById('brand-sub-text');
+      const btnAdminModeToggle = document.getElementById('btn-admin-mode-toggle');
+      const adminLockIcon = document.getElementById('admin-lock-icon');
+      const adminStatusText = document.getElementById('admin-status-text');
+      const laserLine = document.getElementById('scanner-laser-line');
+      const navBadge = document.getElementById('nav-badge');
+      const navTabsBox = document.getElementById('nav-tabs-box');
+      const methodTabsBox = document.getElementById('method-tabs-box');
+      const uploadIcon = document.getElementById('icon-upload');
+      const operatorCard = document.getElementById('operator-card');
+      const labelOperator = document.getElementById('label-operator');
+      const labelBatch = document.getElementById('label-batch');
+      const scannerMainCard = document.getElementById('scanner-main-card');
+      const scannerTitle = document.getElementById('scanner-title');
+      const miniHistoryBtn = document.getElementById('mini-history-btn');
+      const iconMiniHistory = document.getElementById('icon-mini-history');
+      const detailMainCard = document.getElementById('detail-main-card');
+      const detailTitleText = document.getElementById('detail-title-text');
+      const iconDetailTitle = document.getElementById('icon-detail-title');
+      const btnBackToScan = document.getElementById('btn-back-to-scan');
+      const btnScan = document.getElementById('btn-nav-scan');
+      const btnDetail = document.getElementById('btn-nav-detail');
+
+      if (isGold) {
+        body.classList.replace('bg-slate-900', 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))]');
+        body.classList.add('from-yellow-950/40', 'via-stone-950', 'to-neutral-950');
+        body.classList.replace('text-slate-100', 'text-yellow-100');
+        bgGlow1.className = "absolute -top-40 -left-40 w-96 h-96 bg-yellow-500/40 rounded-full blur-3xl admin-gold-transition";
+        bgGlow2.className = "absolute top-1/2 -right-40 w-96 h-96 bg-amber-400/20 rounded-full blur-3xl admin-gold-transition";
+        mainHeader.className = "py-4 px-6 border-b border-yellow-500/40 bg-stone-950/90 backdrop-blur-md sticky top-0 z-50 admin-gold-transition";
+        brandLogoBox.className = "w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center shadow-lg text-stone-950 admin-gold-transition";
+        brandSubText.className = "text-[10px] text-yellow-400 font-bold tracking-wider admin-gold-transition";
+        navBadge.className = "flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold bg-yellow-400/20 text-yellow-400 border border-yellow-400/40 admin-gold-transition";
+        navTabsBox.className = "bg-stone-900/90 p-1 rounded-xl flex border border-yellow-400/30 admin-gold-transition";
+        methodTabsBox.className = "bg-stone-900/60 p-1 rounded-xl flex border border-yellow-500/20 text-[11px] admin-gold-transition";
+        btnAdminModeToggle.className = "w-full py-3 px-4 rounded-xl flex items-center justify-between text-sm font-bold bg-yellow-400/10 text-yellow-400 border border-yellow-400/30 transition-all";
+        adminLockIcon.className = "fa-solid fa-unlock text-xs text-yellow-400 animate-pulse";
+        adminStatusText.innerText = "ผู้จัดการ: เปิดใช้งานอยู่";
+        laserLine.className = "absolute left-0 w-full h-[3px] bg-yellow-400 shadow-[0_0_18px_#facc15] scanner-laser pointer-events-none admin-gold-transition";
+        uploadIcon.className = "fa-solid fa-cloud-arrow-up text-2xl text-yellow-400 admin-gold-transition";
+        operatorCard.className = "bg-yellow-500/5 backdrop-blur-md p-4 rounded-2xl border border-yellow-400/40 shadow-xl space-y-3 admin-gold-transition";
+        labelOperator.className = "text-[11px] font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5 admin-gold-transition";
+        labelBatch.className = "text-[11px] font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5 admin-gold-transition";
+        scannerMainCard.className = "bg-yellow-400/5 backdrop-blur-xl border border-yellow-400/40 rounded-3xl p-5 shadow-2xl flex flex-col gap-5 admin-gold-transition";
+        scannerTitle.className = "text-base font-bold text-yellow-100 admin-gold-transition";
+        miniHistoryBtn.className = "bg-yellow-500/5 hover:bg-yellow-500/10 rounded-2xl p-3 border border-yellow-500/30 text-xs text-amber-200 transition-all shadow-md flex items-center justify-between admin-gold-transition";
+        iconMiniHistory.className = "fa-solid fa-clock-rotate-left text-yellow-400 admin-gold-transition";
+        detailMainCard.className = "bg-yellow-500/5 backdrop-blur-xl border border-yellow-400/40 rounded-3xl p-5 shadow-2xl space-y-4 admin-gold-transition";
+        detailTitleText.className = "text-base font-bold text-yellow-100 flex items-center gap-2 admin-gold-transition";
+        iconDetailTitle.className = "fa-solid fa-file-invoice text-yellow-400 admin-gold-transition";
+        btnBackToScan.className = "w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 admin-gold-transition";
+      } else {
+        body.className = "bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden admin-gold-transition";
+        bgGlow1.className = "absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl admin-gold-transition";
+        bgGlow2.className = "absolute top-1/2 -right-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl admin-gold-transition";
+        mainHeader.className = "py-4 px-6 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-md sticky top-0 z-50 admin-gold-transition";
+        brandLogoBox.className = "w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg text-white admin-gold-transition";
+        brandSubText.className = "text-[10px] text-slate-400 font-medium font-mono admin-gold-transition";
+        navBadge.className = "flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 admin-gold-transition";
+        navTabsBox.className = "bg-slate-800/60 p-1 rounded-xl flex border border-slate-700/50 admin-gold-transition";
+        methodTabsBox.className = "bg-slate-800/30 p-1 rounded-xl flex border border-slate-800/60 text-[11px] admin-gold-transition";
+        btnAdminModeToggle.className = "w-full py-3 px-4 rounded-xl flex items-center justify-between text-sm font-semibold text-amber-400 hover:bg-amber-500/10 transition-all";
+        adminLockIcon.className = "fa-solid fa-lock text-xs opacity-60";
+        adminStatusText.innerText = "ระบบผู้จัดการ (Admin)";
+        laserLine.className = "absolute left-0 w-full h-[3px] bg-indigo-500 shadow-[0_0_15px_#6366f1] scanner-laser pointer-events-none admin-gold-transition";
+        uploadIcon.className = "fa-solid fa-cloud-arrow-up text-2xl text-indigo-400 admin-gold-transition";
+        operatorCard.className = "bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60 shadow-xl space-y-3 admin-gold-transition";
+        labelOperator.className = "text-[11px] font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5 admin-gold-transition";
+        labelBatch.className = "text-[11px] font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5 admin-gold-transition";
+        scannerMainCard.className = "bg-slate-800/40 backdrop-blur-xl border border-slate-700/40 rounded-3xl p-5 shadow-2xl flex flex-col gap-5 admin-gold-transition";
+        scannerTitle.className = "text-base font-bold text-slate-100 admin-gold-transition";
+        miniHistoryBtn.className = "bg-slate-800/40 hover:bg-slate-800/70 rounded-2xl p-3 border border-slate-800/80 text-xs transition-all shadow-md flex items-center justify-between";
+        iconMiniHistory.className = "fa-solid fa-clock-rotate-left text-indigo-400 admin-gold-transition";
+        detailMainCard.className = "bg-slate-800/40 backdrop-blur-xl border border-slate-700/40 rounded-3xl p-5 shadow-2xl space-y-4";
+        detailTitleText.className = "text-base font-bold text-white flex items-center gap-2 admin-gold-transition";
+        iconDetailTitle.className = "fa-solid fa-file-invoice text-indigo-400 admin-gold-transition";
+        btnBackToScan.className = "w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 admin-gold-transition";
+      }
+
+      const activePage = !document.getElementById('scan-page').classList.contains('hidden') ? 'scan-page' : 'detail-page';
+      if (activePage === 'scan-page') {
+        if (isGold) {
+          btnScan.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-yellow-400 text-stone-950 shadow-lg admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-yellow-400/60 hover:text-yellow-400 admin-gold-transition";
+        } else {
+          btnScan.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 admin-gold-transition";
+        }
+      } else {
+        if (isGold) {
+          btnScan.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-yellow-400/60 hover:text-yellow-400 admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-yellow-400 text-stone-950 shadow-lg admin-gold-transition";
+        } else {
+          btnScan.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 admin-gold-transition";
+          btnDetail.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg admin-gold-transition";
+        }
+      }
+
+      const lockBtn = document.getElementById("lock-btn");
+      if (lockBtn) {
+        if (!isInputLocked) {
+          if (isGold) {
+            lockBtn.className = "w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-stone-950 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2";
+          } else {
+            lockBtn.className = "w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2";
+          }
+        }
+      }
+
+      const currentMethod = scanMethod;
+      switchScanMethod(currentMethod);
+      
+      renderHistoryTable();
+    }
+
+    function switchScanMethod(method) {
+      scanMethod = method;
+      const tabLive = document.getElementById("tab-live");
+      const tabUpload = document.getElementById("tab-upload");
+      const liveContainer = document.getElementById("live-scanner-container");
+      const uploadContainer = document.getElementById("upload-scanner-container");
+
+      if (method === "live") {
+        if (isAdminLoggedIn) {
+          tabLive.className = "px-3 py-1 font-bold rounded-md bg-yellow-400 text-stone-950 admin-gold-transition";
+          tabUpload.className = "px-3 py-1 font-medium rounded-md text-yellow-400/60 admin-gold-transition";
+        } else {
+          tabLive.className = "px-3 py-1 font-medium rounded-md bg-slate-700 text-white admin-gold-transition";
+          tabUpload.className = "px-3 py-1 font-medium rounded-md text-slate-400 admin-gold-transition";
+        }
+        liveContainer.classList.remove("hidden");
+        uploadContainer.classList.add("hidden");
+        checkInputLockStatus();
+      } else {
+        if (isAdminLoggedIn) {
+          tabLive.className = "px-3 py-1 font-medium rounded-md text-yellow-400/60 admin-gold-transition";
+          tabUpload.className = "px-3 py-1 font-bold rounded-md bg-yellow-400 text-stone-950 admin-gold-transition";
+        } else {
+          tabLive.className = "px-3 py-1 font-medium rounded-md text-slate-400 admin-gold-transition";
+          tabUpload.className = "px-3 py-1 font-medium rounded-md bg-slate-700 text-white admin-gold-transition";
+        }
+        liveContainer.classList.add("hidden");
+        uploadContainer.classList.remove("hidden");
+        stopLiveScanner();
+      }
+    }
+
+    function playTone(freq, duration) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const fontGainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = freq;
+        fontGainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        oscillator.connect(fontGainNode);
+        fontGainNode.connect(audioCtx.destination);
+        oscillator.start();
+        setTimeout(() => { oscillator.stop(); audioCtx.close(); }, duration * 1000);
+      } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchAndReloadLogsData();
+      document.getElementById("history-date-filter").addEventListener("change", renderHistoryTable);
+      document.getElementById("chart-date-filter").addEventListener("change", renderAnalyticsChart);
+    });
+  </script>
+</body>
+</html>
